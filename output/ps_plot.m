@@ -52,9 +52,9 @@ function ps_plot(ri, o)
         f = figure('Name', ind_names(ind));
         hold on;
         % Draw Boxes Corresponding to Stages
-        fill([td_s; td_s; td_e; td_e], [min(y); max(y); max(y); min(y)], [202,216,240]./255, 'LineStyle', 'none');
-        fill([to_s; to_s; to_e; to_e], [min(y); max(y); max(y); min(y)], [197,215,159]./255, 'LineStyle', 'none');
-        fill([tr_s; tr_s; tr_e; tr_e], [min(y); max(y); max(y); min(y)], [208,150,145]./255, 'LineStyle', 'none');
+        fill([td_s; td_s; td_e; td_e], [min(y)-1000; max(y)+1000; max(y)+1000; min(y)-1000], [202,216,240]./255, 'LineStyle', 'none');
+        fill([to_s; to_s; to_e; to_e], [min(y)-1000; max(y)+1000; max(y)+1000; min(y)-1000], [197,215,159]./255, 'LineStyle', 'none');
+        fill([tr_s; tr_s; tr_e; tr_e], [min(y)-1000; max(y)+1000; max(y)+1000; min(y)-1000], [208,150,145]./255, 'LineStyle', 'none');
         % Plot resilience
         plot(x, y, 'k','LineWidth', 2);
         set(gca, 'Layer', 'top'); % Force x-axis to top layer
@@ -63,6 +63,7 @@ function ps_plot(ri, o)
         ylabel(sprintf("%s [%s]", ind_names(ind), ind_units(ind)), 'Interpreter', 'latex');
         xlabel("Time [Hrs]", 'Interpreter', 'latex');
         xlim([0, max(x)]);
+        ylim([min(y)-abs(min(y) + 1)*0.1, max(y)+abs(max(y))*0.1])
         legend("Disturbance", "Outage", "Restoration", "");
         grid on;
         hold off
