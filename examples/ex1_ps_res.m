@@ -103,4 +103,6 @@ for i=1:size(P.Output, 1)
     end
 end
 
-%% Print Outputs
+%% Print & Plot Outputs
+ps_print(rm, P.Output);
+ps_plot(ri, P.Output);
