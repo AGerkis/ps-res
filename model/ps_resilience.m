@@ -183,7 +183,7 @@ function [resilience_indicators, resilience_metrics, sim_info] = ps_resilience(a
 
     % Generate recovery times for components
     if strcmp(recovery_params.Mode, 'Input') % Recovery time is passed as an input
-        rec_time = struct("branches", recovery_params.branch_recovery_times, "busses", recovery_params.bus_recovery_times, "gens", recovery_params.gen_recovery_times);
+        rec_time = recovery_params.recovery_times;
     else % Recovery time is determined internally
         rec_time = struct("branches", random_sample(recovery_params.branch_recovery_samples, n_branch), "busses", random_sample(recovery_params.bus_recovery_samples, n_bus), "gens", random_sample(recovery_params.gen_recovery_samples, n_gen));
     end

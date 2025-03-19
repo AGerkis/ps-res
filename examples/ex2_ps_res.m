@@ -1,8 +1,7 @@
-% ex1_ps_res.m
+% ex2_ps_res.m
 %
 % Simulates the resilience of a power system using the default system
-% settings. Generates contingencies automatically using the
-% 'generate_contingency' function.
+% settings. Assigns contingencies and recovery times manually.
 %
 % Author: Aidan Gerkis
 % Date: 19-03-2025
@@ -10,11 +9,9 @@
 clear; clc; close all;
 
 %% Load Model Parameters
-% Specify file containing fragility curves
-fname_f_curve = "failure_curve.mat"; % File containing failure curves
-
-% Load recovery data into arrays
-rec_data = assign_rec_data("BPA_data_trimmed_cutoff-2000_min", "", "");
+% Define Inputs
+failure_times = [8, 4, 4, 0, 12, 13];
+repair_times = [3 2 2 0 7 1];
 
 % Load default parameters in a structure, 'P'
 P = ps_resilience_params('default');
@@ -52,16 +49,26 @@ active_set = P.event.active_set; % Set of components affected by the extreme eve
 t_event_end = length(env_state);  % Length of event [Hours]
 t_step = 1; % Time step [Hours]
 
-% Load fragility curve data
-% Load failure curve data into array
-f_curve_data = load(fname_f_curve, 'failure_curve'); % Assign the same x & y data for each component type
-f_curve_data = {[f_curve_data.failure_curve.x; f_curve_data.failure_curve.y], ... 
-    [f_curve_data.failure_curve.x; -1*ones(1, length(f_curve_data.failure_curve.x))],... % The negative one here simply assumes components never fail
-    [f_curve_data.failure_curve.x; -1*ones(1, length(f_curve_data.failure_curve.x))]}; 
+%% Input Definition
+% Define Contingencies
+% Initialize as empty array
+contingencies = struct("branches", zeros(1, n_comp(1)), "busses", zeros(1, n_comp(2)), "gens", zeros(1, n_comp(3)));
 
-% Place failure curve data into structure
-failure_curves = struct;
-[failure_curves.branches, failure_curves.busses, failure_curves.gens] = assign_failure_curves(f_curve_data, n_comp);
+% Assign contingencies to active set (in this example the active set consists only of branches)
+contingencies.branches(str2double(active_set(1, :))) = failure_times;
+
+% Change Input Mode
+P.event.mode = 'Input';
+
+% Define Recovery Times
+% Initialize as empty array
+recovery_times = struct("branches", zeros(1, n_comp(1)), "busses", zeros(1, n_comp(2)), "gens", zeros(1, n_comp(3)));
+
+% Assign repair times to active set (in this example the active set consists only of branches)
+recovery_times.branches(str2double(active_set(1, :))) = repair_times;
+
+% Change Input Mode
+P.recovery_mode = 'Input';
 
 %% Simulation Initialization
 % Store the initial demand and generation at each bus and generator
@@ -82,8 +89,8 @@ network.failed_busses = zeros(1, length(network.bus(:,1)));
 network.failed_gens = zeros(1, length(network.gen(:,1)));
 
 % Compile Event Parameters in Structure
-recovery_params = struct("n_workers", num_workers, 'branch_recovery_samples', rec_data.branch_recovery_samples, 'bus_recovery_samples', rec_data.bus_recovery_samples, 'gen_recovery_samples', rec_data.gen_recovery_samples, 'Mode', P.recovery_mode);
-resilience_event = struct("failure_curves", failure_curves, "state", env_state, "active", active_set, "length", t_event_end, "step", t_step, 'Mode', P.event.mode); % Compile all event parameters
+recovery_params = struct("n_workers", num_workers, 'recovery_times', recovery_times, 'Mode', P.recovery_mode);
+resilience_event = struct("contingencies", contingencies, "state", env_state, "active", active_set, "length", t_event_end, "step", t_step, 'Mode', P.event.mode); % Compile all event parameters
 
 %% Run Model
 [ri, rm, info] = ps_resilience(P.ac_cfm_settings, network, recovery_params, resilience_event, analysis_params, '', '');
