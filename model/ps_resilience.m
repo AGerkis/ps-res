@@ -67,7 +67,7 @@
 %   [2]: Panteli, M., et al. (2017). ”Metrics and Quantification of Operational and Infrastructure
 %        Resilience in Power Systems." IEEE Transactions on Power Systems 32(6): 4732-4742
 
-function [resilience_indicators, resilience_metrics, sim_info] = power_system_resiliency_v3(ac_cfm_settings, network, recovery_params, resilience_event, analysis_params, generation, load)
+function [resilience_indicators, resilience_metrics, sim_info] = ps_resilience(ac_cfm_settings, network, recovery_params, resilience_event, analysis_params, generation, load)
     rng('shuffle', 'twister'); % Ensure different results on each successive iteration
     define_constants; % Define MATPOWER constants
 
@@ -170,9 +170,17 @@ function [resilience_indicators, resilience_metrics, sim_info] = power_system_re
         end
     end
     
-    % Generate contingencies
-    contingencies = generate_contingency(network, resilience_event.failure_curves, resilience_event.state, resilience_event.active);
-    
+    % Generate contingencies through one of two modes:
+    %   1: Using the 'generate_contingency' function, if this was passed
+    %   2: By setting contingencies equal to the pre-defined contingency sets
+    if strcmp(resilience_event.Mode, 'Internal') % Mode 1
+        contingencies = generate_contingency(network, resilience_event.failure_curves, resilience_event.state, resilience_event.active);
+    elseif strcmp(resilience_event.Mode, 'Input') % Mode 2    
+        contingencies = resilience_event.contingencies;
+    else % Throw error
+        error("No resilience event defined or incorrect resilience event defined!");
+    end
+
     % Generate recovery times for components
     if strcmp(recovery_params.Mode, 'Input') % Recovery time is passed as an input
         rec_time = struct("branches", recovery_params.branch_recovery_times, "busses", recovery_params.bus_recovery_times, "gens", recovery_params.gen_recovery_times);
