@@ -40,14 +40,30 @@ function ps_plot(ri, o)
         y = ri.(i_one(ind)).(i_two(ind)).tot; % Indicator values
         x = ri.t.tot; % Time-steps
         
+        % Determine Start and End of Each Phase
+        td_s = x(2);
+        td_e = x(length(ri.t.cf) + 1);
+        to_s = td_e;
+        to_e = x(length(ri.t.cf) + 2); % Outage is always one time-step on x-axis
+        tr_s = to_e;
+        tr_e = ri.t.recovery(end);
+
         % Make Plot
         f = figure('Name', ind_names(ind));
-        plot(x, y, 'LineWidth', 2);
+        hold on;
+        % Draw Boxes Corresponding to Stages
+        fill([td_s; td_s; td_e; td_e], [min(y); max(y); max(y); min(y)], [202,216,240]./255, 'LineStyle', 'none');
+        fill([to_s; to_s; to_e; to_e], [min(y); max(y); max(y); min(y)], [197,215,159]./255, 'LineStyle', 'none');
+        fill([tr_s; tr_s; tr_e; tr_e], [min(y); max(y); max(y); min(y)], [208,150,145]./255, 'LineStyle', 'none');
+        % Plot resilience
+        plot(x, y, 'k','LineWidth', 2);
+        set(gca, 'Layer', 'top'); % Force x-axis to top layer
         fontsize(f, 18, 'points');
         title(sprintf("\\textbf{%s vs. Time}", ind_names(ind)), 'Interpreter', 'latex');
         ylabel(sprintf("%s [%s]", ind_names(ind), ind_units(ind)), 'Interpreter', 'latex');
         xlabel("Time [Hrs]", 'Interpreter', 'latex');
-        xlim([0, max(x)])
+        xlim([0, max(x)]);
+        legend("Disturbance", "Outage", "Restoration", "");
         grid on;
         hold off
     end
