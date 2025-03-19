@@ -59,7 +59,7 @@ function P = ps_resilience_params(model)
             P.event.active_set = [19, 22, 23, 24, 25, 26;
                 "branch", "branch", "branch", "branch", "branch", "branch"];
             P.N = length(P.event.active_set(1, :)); % Number of failed components
-            P.event.mode = 'Internal'; % Set failures to be computed internally
+            P.event.Mode = 'Internal'; % Set failures to be computed internally
 
             % Recovery Parameters - Assume same recovery time curve for each type of component
             P.recovery_mode = 'Internal'; % Set recovery to be computed internally
