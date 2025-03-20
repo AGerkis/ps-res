@@ -1,15 +1,17 @@
-# power-system-resilience
-A power system resilience model, simulating the power system outage and restoration processes during an extreme weather event. Based on MATPOWER's power system simulation library [1] and the AC-CFM cascading failure simulator [2].
+# PSres
+PSres is a power system resilience model, simulating the power system outage and restoration processes during an extreme weather event. It is based on MATPOWER's power system simulation library [1] and the AC-CFM cascading failure simulator [2].
 
 # Licensing & Citing
 This software is open source under the GNU GPLv3 license. All usage, re-production, and re-distribution of this software must respect the terms and conditions of this license.
 
-We request that publications deriving from the use of this power system resilience model explicitly acknowledge that fact by citing the following publication:
+We request that publications deriving from the use of the PSres model explicitly acknowledge that fact by citing the following publication:
 
 A. Gerkis and X. Wang, “Efficient probabilistic assessment of power system resilience using the polynomial chaos expansion method with enhanced stability,” 2025.
 
 # Introduction
-The power system resilience model simulates a power system's response to an extreme weather event. This response is divided into three distinct stages: disturbance, when the system is experiencing damage due to an extreme event; outage, the period after the event before restoration begins; and restoration, when the system is being repaired [3]. The resilience trapezoid, Figure 1, depicts these three stages by plotting the system's performance, measured through some "performance indicator", versus time.
+PSres' primary goal is to simulate a power system's response to an extreme weather event. From this response the user can then quantify the system's resilience through the application of resilience indicators and metrics.
+
+To perform this simulation, the power system's response is divided into three distinct stages: disturbance, when the system is experiencing damage due to an extreme event; outage, the period after the event before restoration begins; and restoration, when the system is being repaired [3]. The resilience trapezoid, Figure 1, depicts these three stages by plotting the system's performance, measured through some "performance indicator", versus time.
 
 ![The Resilience Trapezoid](https://github.com/user-attachments/assets/206616fb-8f80-4ef9-b404-3f99a31ef896)
 <p align=center>*The resilience trapezoid model of a resilience event.*
@@ -47,10 +49,17 @@ Parameters...
 
 
 ## Model Outputs
-The PSres model outputs the complete system state in the MATPOWER case format...
+The PSres model outputs four different structures:
+'''
+[state, ri, rm, info] = psres();
+'''
+PSres's primary output is the system state (in the MATPOWER case format) at the end of each stage. This allows a large degree of flexibility in the indicators and metrics used to quantify resilience, giving the user access to any power system variables computed by the MATPOWER solvers. The system state can be found in the '''state''' output structure.
 
-The model also calculates several resilience indicators and includes these in the output. 
+The model also calculates several resilience indicators at a higher fidelity and includes these in the output. These indicators are computed at each PSres model time-step (compared to the system state, which is only output at the end of each stage). They can be found in the '''ri''' output structure. Currently the supported indicators are:
 
+Finally, the model applies the $\Phi$$\Lambda$$E$$\Pi$ metrics, proposed by Panteli et al. [5] to quantify the system's resilience through the aforementioned indicators. These are included in the '''rm''' output structure.
+
+Diagnostic information is also included in the '''info''' output structure.
 
 ## Specifying Fragility Curves
 
