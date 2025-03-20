@@ -32,12 +32,31 @@ During the restoration stage the power system's damaged components are repaired 
 
 The restoration stage is modelled by determining the repair time for each damaged component. These repair times are used as the time-steps for the restoration model (i.e., the system is assumed to change only after a component is repaired). At each time-step the repaired component(s) is reconnected to the system, as are any neighbouring components which were disconnected during the disturbance stage. The optimal power-flow algorithm is used to compute the system's state, which is passed to the next time-step. If a convergent system state does not exist then the neighbouring components are disconnected from the network. In either case, the simulation is advanced to the next time-step. This process is completed until all components have been repaired and reconnected and the system is restored to its pre-disturbance state.
 
-## Model Inputs
+## Model Inputs & Parameters
+The primary inputs to the PSres model are the component failure times during an extreme event and the repair times. These are represented as a vector, whose entries represent the time (measured from the event's start) when the component fails. Extreme storms are typically modelled as affecting only a subsection of the complete network, so this input vector generally represents a subset of network components. We adopt the notation that a component which does not fail during an event is assigned a failure time of zero. The repair times are also represented by a vector, whose entries represent the time (measured from the restoration period's start) when the component is repaired. This vector should be the same size as the vector of component failure times. As in the component failure vector, a component which does not fail (and thus does not need to be repaired) is assigned a repair time of zero.
+
+Inputs can be specified in one of two ways: as explicit model inputs, where the user selects the failure and repair times, or as implicit model inputs, where the user provides data from which repair times and recovery times are calculated. In the implicit formulation the user must provide a fragility curve and a vector representing the repair time distribution. The fragility curve models a component's failure probability as a function of the weather state [5] and is passed to the model as a series of x values (representing weather state) and y values (representing weather state). For more details on specifying fragility curves see **Specifying Fragility Curves**. In the implicit PSres model formulation component failures and repair times are determined randomly at runtime. Component failures are determined by comparing failure probability to the weather state and repair times are determined by randomly sampling the provided distribution. Thus, the implicit model formulation is stochastic; the model output will be different on consecutive runs, even if the inputs remain constant. By contrast, the PSres model's explicit formulation is deterministic; it will always provide the same output when given the same input. 
+
+
+Other inputs...
+- Num Workers
+- Network
+- Event Model
+
+Parameters...
+
 
 ## Model Outputs
+The PSres model outputs the complete system state in the MATPOWER case format...
+
+The model also calculates several resilience indicators and includes these in the output. 
+
+
+## Specifying Fragility Curves
 
 # References
 [1]: R. D. Zimmerman, C. E. Murillo-Sanchez, and R. J. Thomas, “MATPOWER: Steady-State Operations, Planning and Analysis Tools for Power Systems Research and Education,” Power Systems, IEEE Transactions on, vol. 26, no. 1, pp. 12–19, Feb. 2011.
 [2]: AC-CFM M. Noebels, R. Preece, and M. Panteli, “Ac cascading failure model for resilience analysis in power networks,” IEEE Systems Journal, vol. 16, no. 1, pp. 374–385, March 2022.
 [3]: A. M. Stankovi´c, K. L. Tomsovic, F. De Caro, M. Braun, J. H. Chow, N. Cukalevski et al., “Methods for analysis and quantification of power system resilience,” IEEE Transactions on Power Systems, vol. 38, no. 5, pp. 4774–4787, Sept. 2023.
 [4]: S. Marelli, C. Lamas, K. Konakli, C. Mylonas, P. Wiederkehr, and B. Sudret, “UQLab user manual – Sensitivity analysis,” Chair of Risk, Safety and Uncertainty Quantification, ETH Zurich, Switzerland, Tech. Rep., 2024, report UQLab-V2.1-106.
+[5]: M. Panteli, P. Mancarella, D. N. Trakas, E. Kyriakides, and N. D. Hatziargyriou, “Metrics and quantification of operational and infrastructure resilience in power systems,” IEEE Transactions on Power Systems, vol. 32, no. 6, pp. 4732–4742, Nov. 2017.
