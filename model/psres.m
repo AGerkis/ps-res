@@ -187,7 +187,7 @@ function [state, resilience_indicators, resilience_metrics, sim_info] = psres(ac
     else % Throw error
         error("No resilience event defined or incorrect resilience event defined!");
     end
-
+    
     % Generate recovery times for components
     if strcmp(recovery_params.Mode, 'Implicit') % Recovery time is determined internally
         rec_time = struct("branches", random_sample(recovery_params.branch_recovery_samples, n_branch), "busses", random_sample(recovery_params.bus_recovery_samples, n_bus), "gens", random_sample(recovery_params.gen_recovery_samples, n_gen));        
@@ -196,6 +196,10 @@ function [state, resilience_indicators, resilience_metrics, sim_info] = psres(ac
     else % Throw error
         error("No repair time model or incorrect repair time model defined!")
     end
+    
+    % Add contingencies and recovery times to info structure
+    info.contingencies = contingencies;
+    info.recovery_times = rec_time;
 
     % Model resilience event
     for i=1:n_step % Loop for each time step in [0, t_event_end]
@@ -248,7 +252,7 @@ function [state, resilience_indicators, resilience_metrics, sim_info] = psres(ac
 
     %% Process AC-CFM Output
     % Store the system state after CF
-    state.dist = failed_system;
+    state.disturbance = failed_system;
 
     % Store the final demand and generation after CF at each bus and generator
     failed_system.demand_final = zeros(2, length(failed_system.bus(:,1))); % Final network loading
