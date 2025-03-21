@@ -70,7 +70,7 @@
 %   [2]: Panteli, M., et al. (2017). ”Metrics and Quantification of Operational and Infrastructure
 %        Resilience in Power Systems." IEEE Transactions on Power Systems 32(6): 4732-4742
 
-function [state, resilience_indicators, resilience_metrics, sim_info] = ps_resilience(ac_cfm_settings, network, recovery_params, resilience_event, analysis_params, generation, load)
+function [state, resilience_indicators, resilience_metrics, sim_info] = psres(ac_cfm_settings, network, recovery_params, resilience_event, analysis_params, generation, load)
     rng('shuffle', 'twister'); % Ensure different results on each successive iteration
     define_constants; % Define MATPOWER constants
 

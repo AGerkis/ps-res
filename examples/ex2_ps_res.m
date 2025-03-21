@@ -93,7 +93,7 @@ recovery_params = struct("n_workers", num_workers, 'recovery_times', recovery_ti
 resilience_event = struct("contingencies", contingencies, "state", env_state, "active", active_set, "length", t_event_end, "step", t_step, 'Mode', P.event.mode); % Compile all event parameters
 
 %% Run Model
-[ri, rm, info] = ps_resilience(P.ac_cfm_settings, network, recovery_params, resilience_event, analysis_params, '', '');
+[state, ri, rm, info] = psres(P.ac_cfm_settings, network, recovery_params, resilience_event, analysis_params, '', '');
 
 %% Extract Outputs
 Y = zeros(1, size(P.Output, 1)); % Save Metrics
