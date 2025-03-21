@@ -89,7 +89,7 @@ function [state, resilience_indicators, resilience_metrics, sim_info] = psres(ac
     else % Use 90 as the default percentile
         q = 90; 
     end
-    
+
     % Parse generation and load inputs
     if ~isempty(generation)
         gen_fields = fieldnames(generation);
@@ -180,19 +180,21 @@ function [state, resilience_indicators, resilience_metrics, sim_info] = psres(ac
     % Generate contingencies through one of two modes:
     %   1: Using the 'generate_contingency' function, if this was passed
     %   2: By setting contingencies equal to the pre-defined contingency sets
-    if strcmp(resilience_event.Mode, 'Internal') % Mode 1
+    if strcmp(resilience_event.Mode, 'Implicit') % Mode 1
         contingencies = generate_contingency(network, resilience_event.failure_curves, resilience_event.state, resilience_event.active);
-    elseif strcmp(resilience_event.Mode, 'Input') % Mode 2    
+    elseif strcmp(resilience_event.Mode, 'Explicit') % Mode 2    
         contingencies = resilience_event.contingencies;
     else % Throw error
         error("No resilience event defined or incorrect resilience event defined!");
     end
 
     % Generate recovery times for components
-    if strcmp(recovery_params.Mode, 'Input') % Recovery time is passed as an input
+    if strcmp(recovery_params.Mode, 'Implicit') % Recovery time is determined internally
+        rec_time = struct("branches", random_sample(recovery_params.branch_recovery_samples, n_branch), "busses", random_sample(recovery_params.bus_recovery_samples, n_bus), "gens", random_sample(recovery_params.gen_recovery_samples, n_gen));        
+    elseif strcmp(recovery_params.Mode, 'Explicit') % Recovery time is passed as an input
         rec_time = recovery_params.recovery_times;
-    else % Recovery time is determined internally
-        rec_time = struct("branches", random_sample(recovery_params.branch_recovery_samples, n_branch), "busses", random_sample(recovery_params.bus_recovery_samples, n_bus), "gens", random_sample(recovery_params.gen_recovery_samples, n_gen));
+    else % Throw error
+        error("No repair time model or incorrect repair time model defined!")
     end
 
     % Model resilience event
