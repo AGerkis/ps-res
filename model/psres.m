@@ -84,7 +84,11 @@ function [state, resilience_indicators, resilience_metrics, sim_info] = psres(ac
     t_event_end = resilience_event.length;
     
     % Analysis Parameters
-    q = analysis_params.q;
+    if isfield(analysis_params, 'q')
+        q = analysis_params.q;
+    else % Use 90 as the default percentile
+        q = 90; 
+    end
     
     % Parse generation and load inputs
     if ~isempty(generation)
