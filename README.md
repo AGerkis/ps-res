@@ -13,9 +13,12 @@ PSres' primary goal is to simulate a power system's response to an extreme weath
 
 To perform this simulation, the power system's response is divided into three distinct stages: disturbance, when the system is experiencing damage due to an extreme event; outage, the period after the event before restoration begins; and restoration, when the system is being repaired [3]. The resilience trapezoid, Figure 1, depicts these three stages by plotting the system's performance, measured through some "performance indicator", versus time.
 
-![The Resilience Trapezoid](https://github.com/user-attachments/assets/206616fb-8f80-4ef9-b404-3f99a31ef896)
-<p align=center>*The resilience trapezoid model of a resilience event.*
-
+<p align="center" width="100%">
+<img src="https://github.com/user-attachments/assets/206616fb-8f80-4ef9-b404-3f99a31ef896" alt="Resilience Trapezoid" width="500">
+</p>
+<p align="center"><i>The resilience trapezoid model of a resilience event.</i>
+</p>
+    
 The power system resilience model simulates these three stages independently to model the system's complete response to an extreme weather event.
 
 # Model Structure
@@ -60,8 +63,8 @@ The PSres model outputs four different structures:
 ```
 [state, resilience_indicators, resilience_metrics, sim_info] = psres(ac_cfm_settings, network, recovery_params, resilience_event, analysis_params, generation, load);
 ```
-PSres's primary output is the system state (in the MATPOWER case format) at the end of each stage. This allows a large degree of flexibility in the indicators and metrics used to quantify resilience, giving the user access to any power system variables computed by the MATPOWER solvers. The system state can be found in the '''state''' output structure.\
-`state.dist`: The system's state after the disturbance stage.\
+PSres's primary output is the system state (in the MATPOWER case format) at the end of each stage. This allows a large degree of flexibility in the indicators and metrics used to quantify resilience, giving the user access to any power system variables computed by the MATPOWER solvers. The system state can be found in the `state` output structure.\
+`state.disturbance`: The system's state after the disturbance stage.\
 `state.outage`: The system's state after the outage stage.\
 `state.restoration`: The system's state after the restoration stage.
 
@@ -93,30 +96,32 @@ Three default datasets are provided for use in the example resilience models:\
 ## Example 1: Resilience Quantification with Explicit Inputs
 In this example we construct and execute the PSres model using the explicit input formulation. This model follows the code in `ex1_ps_res.m`.
 
-First define the default simulation settings
+First define the default simulation settings and the resilience output enumeration
 ```
 P = ps_resilience_params('default');
+output = [1 1; 1 2; 1 3; 1 4; 1 5;
+          2 1; 2 2; 2 3; 2 4; 2 5];
 ```
 Then define the network to be simulated (in this case the IEEE 39-Bus network) and extract some useful parameters
 ```
 network = initialize_network(case39); % Network for analysis
-n_comp = [length(P.network.branch(:,1)); length(P.network.bus(:,1)); length(P.network.gen(:,1))]; % The number of each type of component
+n_comp = [length(network.branch(:,1)); length(network.bus(:,1)); length(network.gen(:,1))];
 ```
 We then specify the event model, first loading the weather profile containing the event data
 ```
-fname_env_state = "wind_profiles.mat"; % File containing wind profiles for analysis
+fname_env_state = "wind_profiles.mat";
 profile_name = "wind_20181220_20181220";
-load(fname_env_state, 'output');
+profiles = load(fname_env_state, 'output').output;
 ```
 The curve defining weather state versus time is then specified and parameters are extracted
 ```
-event.env_state = output.(profile_name).max_intensity_profile';
+env_state = profiles.(profile_name).max_intensity_profile';
 t_event_end = length(env_state);
 t_step = 1;
 ```
-The components being affected by the weather event are then specified. In this case the storm is assumed to only damage transmission lines 19, 22, 23, 24, 25, and 26.
+Then, the components being affected by the weather event must be specified. In this case the storm is assumed to only damage transmission lines 19, 22, 23, 24, 25, and 26.
 ```
-event.active_set = [19, 22, 23, 24, 25, 26;
+active_set = [19, 22, 23, 24, 25, 26;
     "branch", "branch", "branch", "branch", "branch", "branch"];
 ```
 We then specify the number of workers repairing each component. The first array element represents transmission lines, the second buses, and the third generators.
@@ -128,24 +133,22 @@ num_workers = [2, 2, 1];
 We can now define the model inputs, first specifying the component failure times at each transmission line. The array is initialized with all zeros, and the components experiencing a failure are then specified.
 ```
 contingencies = struct("branches", zeros(1, n_comp(1)), "busses", zeros(1, n_comp(2)), "gens", zeros(1, n_comp(3)));
-contingencies.branches(str2double(active_set(1, :))) = [8, 4, 4, 0, 12, 13];
+contingencies.branches(str2double(active_set(1, :))) = [12 12 0 4 22 19];
 ```
 The input mode is then specified as explicit
 ```
-event.mode = 'Explicit';
+event_mode = 'Explicit';
 ```
-
-The repair times are then specified analogously
+We can then specify the repair times analogously
 ```
 recovery_times = struct("branches", zeros(1, n_comp(1)), "busses", zeros(1, n_comp(2)), "gens", zeros(1, n_comp(3)));
-recovery_times.branches(str2double(active_set(1, :))) = [3 2 2 0 7 1];
+recovery_times.branches(str2double(active_set(1, :))) = [3 2 0 9 7 1];
 recovery_mode = 'Explicit';
 ```
-
 The various event parameters are then compiled into structures representing the weather event and component recovery
 ```
-recovery_params = struct("n_workers", num_workers, 'recovery_times', recovery_times, 'Mode', P.recovery_mode);
-resilience_event = struct("contingencies", contingencies, "state", env_state, "active", active_set, "length", t_event_end, "step", t_step, 'Mode', P.event.mode); % Compile all event parameters
+recovery_params = struct("n_workers", num_workers, 'recovery_times', recovery_times, 'Mode', recovery_mode);
+resilience_event = struct("contingencies", contingencies, "state", env_state, "active", active_set, "length", t_event_end, "step", t_step, 'Mode', event_mode); % Compile all event parameters
 ```
 And finally, the resilience model is run by calling `psres`
 ```
@@ -156,7 +159,15 @@ Model outputs can then be plotted (for resilience indicators) and printed to the
 ps_print(rm, P.Output);
 ps_plot(ri, P.Output);
 ```
-For this example, the outputs should...include outputs here
+For this example, the metric output should appear as follows
+<p align="center" width="100%">
+<img src="https://github.com/user-attachments/assets/4838ddd6-78ce-4fcc-b1fe-918db48b53dc" alt="Resilience Metric Output" width="300">
+</p>
+and the resilience indicator plots should match the following
+<p align="center" width="100%">
+<img src="https://github.com/user-attachments/assets/c7492726-c1cb-4a4a-9f5b-e178ffe9b11c" alt="Load Served Plot" width="400">
+<img src="https://github.com/user-attachments/assets/3787a2fd-c2e0-4bf5-90cc-885da18c8028" alt="Transmission Lines Disconnected Plot" width="400">
+</p>
 
 ## Example 2: Resilience Quantification with Implicit Inputs
 In this example the PSres model is constructed and ran using the implicit input formulation. First, follow the model initialization process in Example 1, stopping before the model inputs are defined.
@@ -190,7 +201,7 @@ recovery_mode = 'Implicit';
 Finally, the inputs can be placed into their respective structures and the psres model can be called
 ```
 recovery_params = struct("n_workers", num_workers, 'branch_recovery_samples', rec_data.branch_recovery_samples, 'bus_recovery_samples', rec_data.bus_recovery_samples, 'gen_recovery_samples', rec_data.gen_recovery_samples, 'Mode', recovery_mode);
-resilience_event = struct("failure_curves", failure_curves, "state", env_state, "active", active_set, "length", t_event_end, "step", t_step, 'Mode', event.mode); % Compile all event parameters
+resilience_event = struct("failure_curves", failure_curves, "state", env_state, "active", active_set, "length", t_event_end, "step", t_step, 'Mode', event_mode); % Compile all event parameters
 
 [state, ri, rm, info] = psres(P.ac_cfm_settings, network, recovery_params, resilience_event, P.analysis_params, '', '');
 ```
