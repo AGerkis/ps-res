@@ -53,6 +53,9 @@
 %                         object. [pd]
 %
 % Outputs:
+%   state: A structure storing the system state after each phase of the
+%          resilience event. Each structure field is a MATPOWER case format
+%          network.
 %   resilience_indicators: A structure containing all resiliency indicators
 %                          evaluated by the resiliency model.
 %   resilience_metrics: A structure containing all resilience metrics
@@ -67,7 +70,7 @@
 %   [2]: Panteli, M., et al. (2017). ”Metrics and Quantification of Operational and Infrastructure
 %        Resilience in Power Systems." IEEE Transactions on Power Systems 32(6): 4732-4742
 
-function [resilience_indicators, resilience_metrics, sim_info] = ps_resilience(ac_cfm_settings, network, recovery_params, resilience_event, analysis_params, generation, load)
+function [state, resilience_indicators, resilience_metrics, sim_info] = ps_resilience(ac_cfm_settings, network, recovery_params, resilience_event, analysis_params, generation, load)
     rng('shuffle', 'twister'); % Ensure different results on each successive iteration
     define_constants; % Define MATPOWER constants
 
@@ -238,6 +241,9 @@ function [resilience_indicators, resilience_metrics, sim_info] = ps_resilience(a
     end
 
     %% Process AC-CFM Output
+    % Store the system state after CF
+    state.dist = failed_system;
+
     % Store the final demand and generation after CF at each bus and generator
     failed_system.demand_final = zeros(2, length(failed_system.bus(:,1))); % Final network loading
     failed_system.gen_final = zeros(2, length(failed_system.gen(:,1))); % Final network generation
@@ -298,6 +304,9 @@ function [resilience_indicators, resilience_metrics, sim_info] = ps_resilience(a
     %% Compute Length of Outage (before recovery begins)
     t_outage = 1; % Outage time, before restoration begins [hours]
     
+    % Store the state after outage
+    state.outage = failed_system;
+
     %% Compute Recovery
     try % Catch that damn outstanding bug
         recovered_system = ps_recovery(failed_system, damaged_comp, n_dmg, disconnected_comp, n_dc, rec_time, num_workers, ac_cfm_settings.mpopt);
@@ -305,6 +314,9 @@ function [resilience_indicators, resilience_metrics, sim_info] = ps_resilience(a
         err_name = string(datetime('now')) + " - Error State";
         save(err_name, "err", "failed_system", "damaged_comp", "n_dmg", "disconnected_comp", "n_dc", "rec_time", "num_workers", "ac_cfm_settings.mpopt");
     end
+    
+    % Store the state after restoration
+    state.restoration = recovered_system;
 
     %% Compile Data
     ri = resilience_indicators; % Define short hand
