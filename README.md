@@ -65,6 +65,8 @@ Diagnostic information is also included in the '''info''' output structure.
 # Examples
 To showcase application of the resilience model two examples are detailed below. The first example deals with the explicit input formulation, while the second details the implicit input formulation.
 
+
+
 ## Default Datasets
 Three default datasets are provided for use in the example resilience models:
 -`frag_curve.mat`: Contains transmission line fragility curves (specified as a vector of weather states and corresponding failure probabilities) computed using outage data in the BPA power system [6] and corresponding weather data [7].
@@ -74,9 +76,107 @@ Three default datasets are provided for use in the example resilience models:
 ## Example 1: Resilience Quantification with Explicit Inputs
 In this example we construct and execute the PSres model using the explicit input formulation. This model follows the code in `ex1_ps_res.m`.
 
-First load the default model parameters, instatiating a model of the IEEE 39-Bus test system, using the default weather event and fragility curve data. This model assumes an event affecting only transmission lines (branches 19, 22, 23, 24, 25, and 26 in particular) and assigns two workers to transmission line repair.
+First define the default simulation settings
+```
+P = ps_resilience_params('default');
+```
+Then define the network to be simulated (in this case the IEEE 39-Bus network) and extract some useful parameters
+```
+network = initialize_network(case39); % Network for analysis
+n_comp = [length(P.network.branch(:,1)); length(P.network.bus(:,1)); length(P.network.gen(:,1))]; % The number of each type of component
+```
+We then specify the event model, first loading the weather profile containing the event data
+```
+fname_env_state = "wind_profiles.mat"; % File containing wind profiles for analysis
+profile_name = "wind_20181220_20181220";
+load(fname_env_state, 'output');
+```
+The curve defining weather state versus time is then specified and parameters are extracted
+```
+event.env_state = output.(profile_name).max_intensity_profile';
+t_event_end = length(env_state);
+t_step = 1;
+```
+The components being affected by the weather event are then specified. In this case the storm is assumed to only damage transmission lines 19, 22, 23, 24, 25, and 26.
+```
+event.active_set = [19, 22, 23, 24, 25, 26;
+    "branch", "branch", "branch", "branch", "branch", "branch"];
+```
+We then specify the number of workers repairing each component. The first array element represents transmission lines, the second buses, and the third generators.
+```
+num_workers = [2, 2, 1]; 
+```
+
+
+We can now define the model inputs, first specifying the component failure times at each transmission line. The array is initialized with all zeros, and the components experiencing a failure are then specified.
+```
+contingencies = struct("branches", zeros(1, n_comp(1)), "busses", zeros(1, n_comp(2)), "gens", zeros(1, n_comp(3)));
+contingencies.branches(str2double(active_set(1, :))) = [8, 4, 4, 0, 12, 13];
+```
+The input mode is then specified as explicit
+```
+event.mode = 'Explicit';
+```
+
+The repair times are then specified analogously
+```
+recovery_times = struct("branches", zeros(1, n_comp(1)), "busses", zeros(1, n_comp(2)), "gens", zeros(1, n_comp(3)));
+recovery_times.branches(str2double(active_set(1, :))) = [3 2 2 0 7 1];
+recovery_mode = 'Explicit';
+```
+
+The various event parameters are then compiled into structures representing the weather event and component recovery
+```
+recovery_params = struct("n_workers", num_workers, 'recovery_times', recovery_times, 'Mode', P.recovery_mode);
+resilience_event = struct("contingencies", contingencies, "state", env_state, "active", active_set, "length", t_event_end, "step", t_step, 'Mode', P.event.mode); % Compile all event parameters
+```
+And finally, the resilience model is run by calling `psres`
+```
+[state, ri, rm, info] = psres(P.ac_cfm_settings, network, recovery_params, resilience_event, P.analysis_params, '', '');
+```
+Model outputs can then be plotted (for resilience indicators) and printed to the console (for resilience metrics) 
+```
+ps_print(rm, P.Output);
+ps_plot(ri, P.Output);
+```
+For this example, the outputs should...include outputs here
 
 ## Example 2: Resilience Quantification with Implicit Inputs
+In this example the PSres model is constructed and ran using the implicit input formulation. First, follow the model initialization process in Example 1, stopping before the model inputs are defined.
+
+The fragility curves can then be loaded from the default datasets
+```
+fname_f_curve = "frag_curve.mat";
+f_curve_data = load(fname_f_curve, 'failure_curve');
+```
+And can then be assigned to each component class (branch, bus, and generator). The $-1$ term in the second and third positions indicates that no failures occur for these components.
+```
+f_curve_data = {[f_curve_data.failure_curve.x; f_curve_data.failure_curve.y], ... 
+    [f_curve_data.failure_curve.x; -1*ones(1, length(f_curve_data.failure_curve.x))],... 
+    [f_curve_data.failure_curve.x; -1*ones(1, length(f_curve_data.failure_curve.x))]}; 
+```
+The fragility curves can then be assigned to a structure using the `assign_failure_curves` function
+```
+failure_curves = struct;
+[failure_curves.branches, failure_curves.busses, failure_curves.gens] = assign_failure_curves(f_curve_data, n_comp);
+```
+And the input mode should be specified
+```
+event.mode = 'Implicit';
+```
+Repair times can be specified by loading the default dataset and calling the `assign_rec_data` function, then specifying the input mode
+```
+fname_rec_data = "recovery_data";
+rec_data = assign_rec_data(fname_rec_data, "", "");
+recovery_mode = 'Implicit';
+```
+Finally, the inputs can be placed into their respective structures and the psres model can be called
+```
+recovery_params = struct("n_workers", num_workers, 'branch_recovery_samples', rec_data.branch_recovery_samples, 'bus_recovery_samples', rec_data.bus_recovery_samples, 'gen_recovery_samples', rec_data.gen_recovery_samples, 'Mode', recovery_mode);
+resilience_event = struct("failure_curves", failure_curves, "state", env_state, "active", active_set, "length", t_event_end, "step", t_step, 'Mode', event.mode); % Compile all event parameters
+
+[state, ri, rm, info] = psres(P.ac_cfm_settings, network, recovery_params, resilience_event, P.analysis_params, '', '');
+```
 
 # Specifying Fragility Curves
 Fragility curves can be specified directly, as an array of weather states and the corresponding failure components, or as a parametric distribution with its corresponding parameters. Curves may also be specified per component or en masse for the entire system. See the documentation of `assign_failure_curves`` for details.
