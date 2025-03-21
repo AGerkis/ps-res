@@ -196,10 +196,6 @@ function [state, resilience_indicators, resilience_metrics, sim_info] = psres(ac
     else % Throw error
         error("No repair time model or incorrect repair time model defined!")
     end
-    
-    % Add contingencies and recovery times to info structure
-    info.contingencies = contingencies;
-    info.recovery_times = rec_time;
 
     % Model resilience event
     for i=1:n_step % Loop for each time step in [0, t_event_end]
@@ -564,7 +560,7 @@ function [state, resilience_indicators, resilience_metrics, sim_info] = psres(ac
     end
 
     %% Compile Simulation Information
-    si = struct("n_contingencies", sum(n_dmg), "n_cascades", sum(n_dc));
+    si = struct("n_contingencies", sum(n_dmg), "n_cascades", sum(n_dc), "contingencies", contingencies, "recovery_times", rec_time);
 
     % Assign output structures
     resilience_indicators = ri;
