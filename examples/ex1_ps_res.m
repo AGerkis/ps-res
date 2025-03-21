@@ -10,7 +10,7 @@ clear; clc; close all;
 
 %% Load Model Parameters
 % Define Inputs
-failure_times = [12 12 0 4 22 19];%[12 10 15 4 22 19];%[8, 4, 4, 0, 12, 13];
+failure_times = [12 12 0 4 22 19];
 repair_times = [3 2 0 9 7 1];
 
 % Specify Outputs
