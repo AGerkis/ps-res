@@ -296,9 +296,11 @@ function exp = gen_exp(o, gen_exp)
     
         %% Save Data
         exp_out = squeeze(exp_out); % Remove any 1 dimensional dimensions
-    
-        save(filename, "exp_in", "exp_out", "sim_times", "tot_time", "in_means", "in_vars", "out_means", "out_vars", "errors");
-    
+        
+        if ~isempty(fname_out) % Save output if requested
+            save(filename, "exp_in", "exp_out", "sim_times", "tot_time", "in_means", "in_vars", "out_means", "out_vars", "errors");
+        end
+
         %% Compile outputs
         exp.in = exp_in;
         exp.out = exp_out;
