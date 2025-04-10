@@ -1,24 +1,25 @@
-% uq_mcs_parallel.m
+% gen_exp.m
 %
-% Sets up and runs a Monte-Carlo Simulation of a given UQ-Lab model using
-% MATLAB's parallel computing capabilities. Analyzes the outputs to
-% generate statistical resilience properties of the system. Supports sampling
-% of inputs specified as UQ-Lab and the specification of a custom function
-% for generating inputs.
+% Sets up and runs a numerical experiment of a given UQ-Lab model using
+% MATLAB's parallel computing capabilities. 
+% 
+% Analyzes the outputs to generate statistical resilience properties of the 
+% system. Supports sampling of inputs specified as UQ-Lab and the 
+% specification of a custom function for generating inputs.
 %
 % Provides support for replications.
 %
 % Inputs:
-%   o: A MATLAB script which configures the options for the resilience MCS.
+%   o: A MATLAB script or structure which configures the options for the experiment.
 %      Should specify the number of simulations to run, the number of
 %      replications, as well as the UQ-Lab formatted model and UQ-Lab
 %      formatted input. [.m script OR Struct]
 %      For structures, the fiels should be:
-%      - n_mcs: The number of simulations to run. [Integer]
+%      - n_s: The number of simulations to run. [Integer]
 %      - n_r: The number of replications to run. [Integer]
 %      - n_pool: The number of parallel pools to us. [Integer]
-%      - n_in: The number of MCS inputs. [Integer]
-%      - n_out: The number of MCS outputs. [Integer]
+%      - n_in: The number of inputs. [Integer]
+%      - n_out: The number of outputs. [Integer]
 %      - model: The model to simulate. [UQ-Model]
 %      - input: The model input [UQ-Input]
 %      - plotting: A boolean indicating whether plots should be made. [Boolean]
@@ -26,15 +27,16 @@
 %      - outname: The output filename for the results. [String]
 %   gen_exp: A function to generate the inputs to the UQ-Lab model. Should
 %            accept one input, N, the number of samples to generate and
-%            return an n_mcs x n_in matrix of sample points. [function handle]
+%            return an n_s x n_in matrix of sample points. [function handle] (OPTIONAL)
 %
 % Outputs:
-%   mcs: A structure containing the results of the MCS. [struct]
+%   exp: A structure containing the experiment results. [struct]
 %
 % Author: Aidan Gerkis
-% Date: 11-06-2024
+% Date: 10-04-2025
 
-function mcs = uq_mcs_parallel(o, gen_exp)
+function exp = gen_exp(o, gen_exp)
+    %% Initialize UQ-Lab
     evalc('uqlab'); % Quiet output
 
     %% Initialize Parameters
@@ -53,7 +55,7 @@ function mcs = uq_mcs_parallel(o, gen_exp)
             model = uq_getModel;
         case 'struct' % Structure was passed
             % Extract fields
-            n_mcs = o.n_mcs;
+            n_s = o.n_s;
             n_r = o.n_r;
             n_pool = o.n_pool;
             n_in = o.n_in;
@@ -65,7 +67,7 @@ function mcs = uq_mcs_parallel(o, gen_exp)
             fname_out = o.outname;
 
             % Select input
-            input = uq_createInput(input.Options);
+            uq_selectInput(input);
         otherwise
             error("Unrecognized options format!");
     end
@@ -78,72 +80,72 @@ function mcs = uq_mcs_parallel(o, gen_exp)
     date = replace(date, ":", "_");
     filename = savdir + date + "_" + fname_out; % Filename where data should be saved
     
-    %% Initialize Monte Carlo Simulation
+    %% Initialize Experiment Simulations
     % Create pool
     myPool = parpool(n_pool);
     
     % Initialize an array to store sim time
-    sim_times = zeros(n_mcs, n_r);
+    sim_times = zeros(n_s, n_r);
     
     % Initialize an array to store outputs
-    mcs_out = zeros(n_mcs, n_out, n_r);
+    exp_out = zeros(n_s, n_out, n_r);
     
-    %% Generate Inputs to Monte Carlo Simulation
+    %% Generate Experiment Inputs
     time = datetime("now");
-    fprintf("\n%s: Generating MCS Inputs...\n", time);
+    fprintf("\n%s: Generating Experiment Inputs...\n", time);
     
     % Create function handle for generating inputs
     switch nargin
-        case 1
+        case 1 % Use default MCS sampling
             get_inputs = @(N)uq_getSample(N, 'MC');
-        case 2
+        case 2 % Use user-specified sampling
             get_inputs = @(N)gen_exp(N);
     end
     
     % Sample inputs
     tic;
-    X = get_inputs(n_mcs);
+    X = get_inputs(n_s);
     t_exp = toc; % Save time to generate the experiments
 
     % Save inputs
-    mcs_in = X;
+    exp_in = X;
     
     time = datetime("now");
-    fprintf("%s: Finished Generating MCS Inputs.\n\n", time);
+    fprintf("%s: Finished Generating Experiment Inputs.\n\n", time);
     
-    %% Perform Monte Carlo Simulation
-    errors = cell(n_r, n_mcs); % Save all errors which occurred
+    %% Evaluate Model on Experiment
+    errors = cell(n_r, n_s); % Save all errors which occurred
 
     % Compute replications
     for i=1:n_r
         time = datetime("now");
-        fprintf("%s: Initializing MCS Iterations for Replication %d...\n", time, i);
+        fprintf("%s: Initializing Iterations for Replication %d...\n", time, i);
     
         % Initiate futures for current replication
-        for j=n_mcs:-1:1
+        for j=n_s:-1:1
             f_rel(j) = parfeval(myPool, @eval_model_par, 1, X(j, :), model.Options);
         end
     
         time = datetime("now");
-        fprintf("%s: Finished Initializing MCS Iterations for Replication %d, Running MCS...\n", time, i);
+        fprintf("%s: Finished Initializing Iterations for Replication %d, Evaluating Experiment...\n", time, i);
     
          % Ensure that all parallels are deleted after exitting parallelization
         cancelFutures = onCleanup(@() cancel(f_rel)); 
         
         % Build a waitbar with a cancel button, using appdata to track
         % whether the cancel button has been pressed.
-        mcs_waitbar = waitbar(0, sprintf('Metamodel Compuation Progress - 0/%d', n_mcs), 'CreateCancelBtn', ...
+        exp_waitbar = waitbar(0, sprintf('Experiment Evaluation Progress - 0/%d', n_s), 'CreateCancelBtn', ...
                            @(src, event) setappdata(gcbf(), 'Cancelled', true));
-        setappdata(mcs_waitbar, 'Cancelled', false);
+        setappdata(exp_waitbar, 'Cancelled', false);
 
         % Variables for output processing
         err_num = 1; % Track position in errors cell array
         n_finished = 0; % Store number of finished model executions
         run_cancelled = false; % Save if the user has requested the simulation to be cancelled
-        finished = false(1, n_mcs); % Store status of model executions
+        finished = false(1, n_s); % Store status of model executions
         
-        % Get and save MCS outputs
-        while n_finished < n_mcs && ~run_cancelled
+        % Get and save model evaluations
+        while n_finished < n_s && ~run_cancelled
             % Get outputs
             try
                 [finished_ind, Y_cur] = fetchNext(f_rel);
@@ -152,7 +154,7 @@ function mcs = uq_mcs_parallel(o, gen_exp)
                 if ~isempty(finished_ind)
                     finished(finished_ind) = true; % Update status of completed future
 
-                    mcs_out(finished_ind, :, i) = Y_cur; % Save results
+                    exp_out(finished_ind, :, i) = Y_cur; % Save results
                     sim_times(finished_ind, i) = seconds(f_rel(finished_ind).RunningDuration); % Save computation time
 
                     n_finished = n_finished + 1;
@@ -160,14 +162,14 @@ function mcs = uq_mcs_parallel(o, gen_exp)
 
                 % Check to see if an attempt to cancel the simulation (via the
                 % waitbar) was made
-                if getappdata(mcs_waitbar, 'Cancelled')
-                    fprintf('MCS cancelled due to user input.\n');
+                if getappdata(exp_waitbar, 'Cancelled')
+                    fprintf('Experiment cancelled due to user input.\n');
                     run_cancelled = true;
                 end
                 
                 % Update waitbar
-                frac_completed = n_finished/n_mcs;
-                waitbar(frac_completed, mcs_waitbar, sprintf('MCS Progress - %d/%d', n_finished, n_mcs));
+                frac_completed = n_finished/n_s;
+                waitbar(frac_completed, exp_waitbar, sprintf('Experiment Evaluation Progress - %d/%d', n_finished, n_s));
             catch err
                 errors{i, err_num} = err; % Save error
                 err_num = err_num + 1; % Update position in array
@@ -175,11 +177,11 @@ function mcs = uq_mcs_parallel(o, gen_exp)
             end
         end
         
-        delete(mcs_waitbar); % Close the waitbar
+        delete(exp_waitbar); % Close the waitbar
 
         % Print finishing message
         time = datetime("now");
-        fprintf("%s: Finished MCS for Replication %d.\n\n", time, i);
+        fprintf("%s: Finished Evaluation for Replication %d.\n\n", time, i);
     end
 
     %% Shut down pool
@@ -203,8 +205,8 @@ function mcs = uq_mcs_parallel(o, gen_exp)
     
         for i=1:n_out
             % Combine all of the values of the i-th output together
-            [d1, ~, d2] = size(mcs_out(:, i, :));
-            out_cur = reshape(mcs_out(:, i, :), [d1*d2, 1]);
+            [d1, ~, d2] = size(exp_out(:, i, :));
+            out_cur = reshape(exp_out(:, i, :), [d1*d2, 1]);
     
             % Compute moments
             out_means(i) = mean(out_cur);
@@ -278,8 +280,8 @@ function mcs = uq_mcs_parallel(o, gen_exp)
             % Make histograms of output values
             for i=1:n_out
                 % Combine all of the values of the i-th output together
-                [d1, ~, d2] = size(mcs_out(:, i, :));
-                out_cur = reshape(mcs_out(:, i, :), [d1*d2, 1]);
+                [d1, ~, d2] = size(exp_out(:, i, :));
+                out_cur = reshape(exp_out(:, i, :), [d1*d2, 1]);
         
                 % Make plots
                 figure('Name', out_names(1) + " - Histogram");
@@ -295,15 +297,15 @@ function mcs = uq_mcs_parallel(o, gen_exp)
         tot_time = sum(sim_times, 'All');
     
         %% Save Data
-        mcs_out = squeeze(mcs_out); % Remove any 1 dimensional dimensions
+        exp_out = squeeze(exp_out); % Remove any 1 dimensional dimensions
     
-        save(filename, "mcs_in", "mcs_out", "sim_times", "tot_time", "in_means", "in_vars", "out_means", "out_vars", "errors");
+        save(filename, "exp_in", "exp_out", "sim_times", "tot_time", "in_means", "in_vars", "out_means", "out_vars", "errors");
     
         %% Compile outputs
-        mcs.in = mcs_in;
-        mcs.out = mcs_out;
-        mcs.t = tot_time;
-        mcs.t_exp = t_exp;
-        mcs.errors = errors;
+        exp.in = exp_in;
+        exp.out = exp_out;
+        exp.t = tot_time;
+        exp.t_exp = t_exp;
+        exp.errors = errors;
     end
 end

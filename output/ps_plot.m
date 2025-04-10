@@ -21,9 +21,7 @@
 
 function ps_plot(ri, o)
     %% Define Enumeration Arrays
-    i_one = ["op_rel", "if_rel"];
-    i_two = ["load_served", "tl_dc"];
-    m = ["F", "L", "E", "P", "Area_lin"];
+    output_enumeration;
     
     %% Define Output Strings
     ind_names = ["Load Served", "TL DC"]; % Indicator names

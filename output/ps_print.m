@@ -28,9 +28,7 @@
 
 function ps_print(rm, o)
     %% Define Enumeration Arrays
-    i_one = ["op_rel", "if_rel"];
-    i_two = ["load_served", "tl_dc"];
-    m = ["F", "L", "E", "P", "Area_lin"];
+    output_enumeration;
     
     %% Define Output Strings
     m_chars = [char(934), char(923), "E", char(928), "A"]; % Contains the metrics in unicode format
