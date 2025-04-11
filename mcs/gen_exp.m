@@ -78,7 +78,7 @@ function exp = gen_exp(o, gen_exp)
     date = replace(date, "-", "");
     date = replace(date, " ", "_");
     date = replace(date, ":", "_");
-    filename = savdir + date + "_" + fname_out; % Filename where data should be saved
+    filename = savdir + "\" + date + "_" + fname_out; % Filename where data should be saved
     
     %% Initialize Experiment Simulations
     % Create pool
