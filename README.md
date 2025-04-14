@@ -14,8 +14,9 @@ To get PSres installed on your computer follow the directions below. MATLAB r202
 ## Dependencies
 This library has the following dependencies, ensure these libraries are installed and working before using PSres!
 1. [AC-CFM](https://github.com/mnoebels/AC-CFM)
-2. [MATPOWER(https://matpower.org/)
+2. [MATPOWER](https://matpower.org/)
 3. [IPOPT](https://coin-or.github.io/Ipopt/)
+   
 Note that IPOPT is not strictly necessary, but the cascading failure model solver settings (the field `ac_cfm_settings.mpopt.opf.ac.solver`) will need to be adjusted, see AC-CFM documentation.
 
 ## Installation
