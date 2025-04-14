@@ -6,7 +6,7 @@ This software is open source under the GNU GPLv3 license. All usage, re-producti
 
 We request that publications deriving from the use of the PSres model explicitly acknowledge that fact by citing the following publication:
 
-A. Gerkis and X. Wang, “Efficient probabilistic assessment of power system resilience using the polynomial chaos expansion method with enhanced stability,” 2025.
+A. Gerkis and X. Wang, “Efficient probabilistic assessment of power system resilience using the polynomial chaos expansion method with enhanced stability,” in 2025 IEEE Power & Energy Society General Meeting (PESGM), Austin, TX, July 2025.
 
 # Introduction
 PSres' primary goal is to simulate a power system's response to an extreme weather event. From this response the user can then quantify the system's resilience through the application of resilience indicators and metrics.
