@@ -8,6 +8,21 @@ We request that publications deriving from the use of the PSres model explicitly
 
 A. Gerkis and X. Wang, “Efficient probabilistic assessment of power system resilience using the polynomial chaos expansion method with enhanced stability,” in 2025 IEEE Power & Energy Society General Meeting (PESGM), Austin, TX, July 2025.
 
+# Getting Started
+To get PSres installed on your computer follow the directions below. MATLAB r2022a or later is recommended to use PSres.
+
+## Dependencies
+This library has the following dependencies, ensure these libraries are installed and working before using PSres!
+1. [AC-CFM] (https://github.com/mnoebels/AC-CFM)
+2. [MATPOWER] (https://matpower.org/)
+3. [IPOPT] (https://coin-or.github.io/Ipopt/)
+Note that IPOPT is not strictly necessary, but the cascading failure model solver settings (the field `ac_cfm_settings.mpopt.opf.ac.solver`) will need to be adjusted, see AC-CFM documentation.
+
+## Installation
+To install PSres simply clone this repo into a convenient location on your computer:
+1. `git clone https://github.com/AGerkis/ps-res.git`
+2. Add PSres to your MATLAB path (Home -> Set Path in the MATLAB tool bar).
+
 # Introduction
 PSres' primary goal is to simulate a power system's response to an extreme weather event. From this response the user can then quantify the system's resilience through the application of resilience indicators and metrics.
 
