@@ -25,9 +25,9 @@
 %      - plotting: A boolean indicating whether plots should be made. [Boolean]
 %      - savdir: The directory under which to save the results. [String]
 %      - outname: The output filename for the results. [String]
-%   gen_exp: A function to generate the inputs to the UQ-Lab model. Should
-%            accept one input, N, the number of samples to generate and
-%            return an n_s x n_in matrix of sample points. [function handle] (OPTIONAL)
+%   ed: A function to generate the inputs to the UQ-Lab model. Should
+%       accept one input, N, the number of samples to generate and
+%       return an n_s x n_in matrix of sample points. [function handle] (OPTIONAL)
 %
 % Outputs:
 %   exp: A structure containing the experiment results. [struct]
@@ -35,15 +35,13 @@
 % Author: Aidan Gerkis
 % Date: 10-04-2025
 
-function exp = gen_exp(o, gen_exp)
+function exp = gen_exp(o, ed)
     %% Initialize UQ-Lab
     evalc('uqlab'); % Quiet output
 
     %% Initialize Parameters
     % Set defaults
-    n_bin = 25;
-    n_r = 1;
-    make_plots = true;
+    gen_exp_defaults;
     
     % Get simulation options
     switch class(o)
@@ -55,17 +53,13 @@ function exp = gen_exp(o, gen_exp)
             model = uq_getModel;
         case 'struct' % Structure was passed
             % Extract fields
-            n_s = o.n_s;
-            n_r = o.n_r;
-            n_pool = o.n_pool;
-            n_in = o.n_in;
-            n_out = o.n_out;
-            model = o.model;
-            input = o.input;
-            make_plots = o.plotting;
-            savdir = o.savdir;
-            fname_out = o.outname;
+            opt_names = fieldnames(o);
 
+            % Loop through all custom fields and set values
+            for i=1:length(optnames)
+                assignin('caller', opt_names{i}, o.(opt_names{i}));
+            end
+           
             % Select input
             uq_selectInput(input);
         otherwise
@@ -99,7 +93,7 @@ function exp = gen_exp(o, gen_exp)
         case 1 % Use default MCS sampling
             get_inputs = @(N)uq_getSample(N, 'MC');
         case 2 % Use user-specified sampling
-            get_inputs = @(N)gen_exp(N);
+            get_inputs = @(N)ed(N);
     end
     
     % Sample inputs
