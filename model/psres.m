@@ -69,8 +69,27 @@
 %
 %   [2]: Panteli, M., et al. (2017). ”Metrics and Quantification of Operational and Infrastructure
 %        Resilience in Power Systems." IEEE Transactions on Power Systems 32(6): 4732-4742
-
+%
+% This file is part of PSres.
+% Copyright © 2025 Aidan Gerkis
+%
+% PSres is free software: you can redistribute it and/or modify it under 
+% the terms of the GNU General Public License as published by the Free 
+% Software Foundation, either version 3 of the License, or (at your option) 
+% any later version.
+% 
+% This program is distributed in the hope that it will be useful, but 
+% WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
+% or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License 
+% for more details.
+% 
+% You should have received a copy of the GNU General Public License along 
+% with this program.  If not, see <http://www.gnu.org/licenses/>.
 function [state, resilience_indicators, resilience_metrics, sim_info] = psres(ac_cfm_settings, network, recovery_params, resilience_event, analysis_params, generation, load)
+    %% Copyright Notice
+    psres_copyright_notice;
+
+    %% Initialize Constants and RNG environment
     rng('shuffle', 'twister'); % Ensure different results on each successive iteration
     define_constants; % Define MATPOWER constants
 
