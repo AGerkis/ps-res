@@ -81,7 +81,7 @@ function P = ps_resilience_params(model)
             P.event.state = profiles.(profile_name).max_intensity_profile';
             P.event.active_set = [19, 22, 23, 24, 25, 26;
                 "branch", "branch", "branch", "branch", "branch", "branch"];
-            P.event.length = length(env_state);  % Length of event [Hours]
+            P.event.length = length(P.event.state);  % Length of event [Hours]
             P.event.step = 1; % Time step [Hours]
             
             % Specify recovery parameters

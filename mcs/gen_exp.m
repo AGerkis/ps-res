@@ -61,7 +61,7 @@ function exp = gen_exp(o, ed)
             end
            
             % Select input
-            uq_selectInput(input);
+            uq_createInput(input.Options);
         otherwise
             error("Unrecognized options format!");
     end
@@ -72,7 +72,7 @@ function exp = gen_exp(o, ed)
     date = replace(date, "-", "");
     date = replace(date, " ", "_");
     date = replace(date, ":", "_");
-    filename = savdir + date + "_" + fname_out; % Filename where data should be saved
+    filename = savdir + "\" + date + "_" + fname_out; % Filename where data should be saved
     
     %% Initialize Experiment Simulations
     % Create pool
@@ -117,7 +117,7 @@ function exp = gen_exp(o, ed)
     
         % Initiate futures for current replication
         for j=n_s:-1:1
-            f_rel(j) = parfeval(myPool, @eval_model_par, 1, X(j, :), model.Options);
+            f_rel(j) = parfeval(myPool, @eval_psres_par, 1, X(j, :), model);
         end
     
         time = datetime("now");
@@ -207,9 +207,7 @@ function exp = gen_exp(o, ed)
             out_vars(i) = std(out_cur);
         end
     
-        if make_plots
-            set_plotting_parameters(1, 1);
-            
+        if make_plots            
             % Create default names if not passed
             if ~exist("in_names", 'var') % For inputs
                 in_names = strings(1, n_in);
@@ -233,12 +231,12 @@ function exp = gen_exp(o, ed)
             figure('Name', 'Moments of Input Variables');
             hold on;
             scatter(N_in, in_means, 'Marker', 'o');
-            ylabel("$\mu$");
+            ylabel("\mu");
             yyaxis right;
             scatter(N_in, in_vars, 'Marker', 'x');
-            ylabel("$\sigma$", 'Rotation', 270);
+            ylabel("\sigma", 'Rotation', 270);
             xlim([0, n_in + 1]);
-            title("\textbf{Moments of Input Variables}");
+            title("Moments of Input Variables",'fontweight','bold');
             xlabel("Input Variable");
             xticklabels(in_names);
             grid on;
@@ -248,7 +246,7 @@ function exp = gen_exp(o, ed)
             for i=1:n_in
                 figure('Name', in_names(1) + " - Histogram");
                 histogram(X(:, i), n_bin);
-                title("\textbf{Frequency of " + in_names(1) + "}");
+                title("Frequency of " + in_names(1),'fontweight', 'bold');
                 xlabel(in_names(1));
                 ylabel("Frequency")
                 grid on;
@@ -260,12 +258,12 @@ function exp = gen_exp(o, ed)
             figure('Name', 'Moments of Output Variables');
             hold on;
             scatter(N_out, out_means, 'Marker', 'o');
-            ylabel("$\mu$");
+            ylabel("\mu");
             yyaxis right;
             scatter(N_out, out_vars, 'Marker', 'x');
-            ylabel("$\sigma$", 'Rotation', 270);
+            ylabel("\sigma", 'Rotation', 270);
             xlim([0, n_out + 1]);
-            title("\textbf{Moments of Output Variables}");
+            title("Moments of Output Variables",'fontweight','bold');
             xlabel("Output Variable");
             xticklabels(out_names);
             grid on;
@@ -280,7 +278,7 @@ function exp = gen_exp(o, ed)
                 % Make plots
                 figure('Name', out_names(1) + " - Histogram");
                 histogram(out_cur, n_bin);
-                title("\textbf{Frequency of " + out_names(1) + "}");
+                title("Frequency of " + out_names(1), 'fontweight','bold');
                 xlabel(out_names(1));
                 ylabel("Frequency")
                 grid on;
@@ -292,9 +290,11 @@ function exp = gen_exp(o, ed)
     
         %% Save Data
         exp_out = squeeze(exp_out); % Remove any 1 dimensional dimensions
-    
-        save(filename, "exp_in", "exp_out", "sim_times", "tot_time", "in_means", "in_vars", "out_means", "out_vars", "errors");
-    
+        
+        if ~isempty(fname_out) % Save output if requested
+            save(filename, "exp_in", "exp_out", "sim_times", "tot_time", "in_means", "in_vars", "out_means", "out_vars", "errors");
+        end
+
         %% Compile outputs
         exp.in = exp_in;
         exp.out = exp_out;

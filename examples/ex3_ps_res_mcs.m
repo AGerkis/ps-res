@@ -13,13 +13,13 @@ uqlab;
 sim_opt = struct(); % Create empty structure
 
 % Simulation Parameters
-sim_opt.N_s = 100; % Number of model evaluations to perform in MCS
+sim_opt.n_s = 1000; % Number of model evaluations to perform in MCS        
 sim_opt.n_r = 1; % Number of replications (useful for stochastic models)
-sim_opt.n_pool = 14; % Number of parallel pools to use (IMPORTANT: SHOULD BE LESS THAN NUMBER OF AVAILABLE CORES, RUN feature('numcores') to see this value)
+sim_opt.n_pool = 6; % Number of parallel pools to use (IMPORTANT: SHOULD BE LESS THAN NUMBER OF AVAILABLE CORES, RUN feature('numcores') to see this value)
 sim_opt.plotting = 1; % Make plots visualizing MCS results
 
 % Experiment Saving Parameters
-sim_opt.savdir = ""; % <------------------- Set this to a convenient location!
+sim_opt.savdir = "C:\Users\user\Desktop"; % <------------------- Set this to a convenient location!
 sim_opt.outname = "psres_mcs_example"; % Output filename
 
 % Model Parameters
@@ -40,4 +40,4 @@ sim_opt.model = uq_createModel(model_opts); % Create Model
 %% Perform MCS
 % gen_exp with no other options runs MCS of the specified model, sampled
 % according to the UQ-Lab input's random vector definition
-gen_exp(sim_opt); 
+exp = gen_exp(sim_opt); 

@@ -37,13 +37,17 @@ function Y = uq_psres(X, P)
 
     %% Parameters
     % Extract parameters from UQ-Lab input
-    recovery_params = struct("n_workers", P.num_workers, 'Mode', 'explicit');
-    resilience_event = struct("state", P.event.state, "active", P.event.active_set, "length", P.event.length, "step", P.event.step, 'Mode', 'explicit'); % Compile all event parameters
+    recovery_params = struct("n_workers", P.num_workers, 'Mode', 'Explicit');
+    resilience_event = struct("state", P.event.state, "active", P.event.active_set, "length", P.event.length, "step", P.event.step, 'Mode', 'Explicit'); % Compile all event parameters
     
+    % Extract network parameters
+    n_comp = [length(P.network.branch(:,1)); length(P.network.bus(:,1)); length(P.network.gen(:,1))]; % The number of each type of component
+
     %% Process Inputs & Run Model
     % Initialize output array
     Y = zeros(size(X, 1), size(P.output, 1));
-    
+    N = size(X, 2)/2;
+
     % Initialize input arrays
     recovery_times = struct("branches", zeros(1, n_comp(1)), "busses", zeros(1, n_comp(2)), "gens", zeros(1, n_comp(3)));
     contingencies = struct("branches", zeros(1, n_comp(1)), "busses", zeros(1, n_comp(2)), "gens", zeros(1, n_comp(3)));
@@ -52,15 +56,15 @@ function Y = uq_psres(X, P)
     for i=1:length(X(:, 1)) % For each row (inputs are stored as row vectors)
         % Assign Inputs
         % Failure time inputs
-        contingencies.branches(str2double(P.event.active_set(1, :))) = X(i, 1:(N));
-        resilience_event.contingencies = contingencies;
+        contingencies.branches(str2double(P.event.active_set(1, :))) = ceil(X(i, 1:(N)));
+        resilience_event.contingencies = contingencies; % Round input contingencies to integers
 
         % Recovery Time Inputs
         recovery_times.branches(str2double(P.event.active_set(1, :))) = X(i, (N + 1):end);
-        resilience_event.recovery_times = recovery_times;
+        recovery_params.recovery_times = recovery_times;
        
         % Run Model
-        [ri, rm, ~] = psres(P.ac_cfm_settings, P.network, recovery_params, resilience_event, P.analysis_params);
+        [state, ri, rm, ~] = psres(P.ac_cfm_settings, P.network, recovery_params, resilience_event, P.analysis_params, '', '');
         
         % Save all requested outputs
         for j=1:size(P.output, 1)
