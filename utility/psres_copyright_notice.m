@@ -1,6 +1,6 @@
 % psres_copyright_notice.m
 % 
-% Prints to console the copyright notice for PSres.m.
+% Prints to console the copyright notice for PSres.
 %
 % Author: Aidan Gerkis
 % Date: 15-04-2025
