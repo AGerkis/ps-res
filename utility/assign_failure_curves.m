@@ -317,15 +317,15 @@ function [cdf_branch, cdf_bus, cdf_gen] = assign_failure_curves(arg1, arg2, arg3
     x_gen = linspace(x_l_gen, x_u_gen, n);
     
     for i=1:n_branch
-        cdf_branch{i} = {x_branch, cdf(branch_param(3, i), x_branch, str2num(branch_param(1, i)), str2num(branch_param(2, i)))};
+        cdf_branch{i} = {x_branch, cdf(branch_param(3, i), x_branch, str2double(branch_param(1, i)), str2double(branch_param(2, i)))};
     end
 
     for i=1:n_bus
-        cdf_bus{i} = {x_bus, cdf(bus_param(3, i), x_bus, str2num(bus_param(1, i)), str2num(bus_param(2, i)))};
+        cdf_bus{i} = {x_bus, cdf(bus_param(3, i), x_bus, str2double(bus_param(1, i)), str2double(bus_param(2, i)))};
     end
 
     for i=1:n_gen
-        cdf_gen{i} = {x_gen, cdf(gen_param(3, i), x_gen, str2num(gen_param(1, i)), str2num(gen_param(2, i)))};
+        cdf_gen{i} = {x_gen, cdf(gen_param(3, i), x_gen, str2double(gen_param(1, i)), str2double(gen_param(2, i)))};
     end
 
     return;

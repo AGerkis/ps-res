@@ -34,7 +34,7 @@
 
 function samples = random_sample(data, points)
     % Parse inputs
-    if length(data) == 0 % If data array is empty
+    if isempty(data) % If data array is empty
         data = zeros(1, 100); % Create arbitrary length array of zeros
     end
 
