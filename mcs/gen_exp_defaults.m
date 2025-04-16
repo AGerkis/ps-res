@@ -49,4 +49,4 @@ make_plots = true; % Whether or not to make validation plots
 
 % Saving parameters (DO NOT SAVE BY DEFAULT)
 savdir = ''; % Saving directory
-fname_out = ""; % Default output name
+fname_out = ''; % Default output name
