@@ -74,8 +74,8 @@ function exp = gen_exp(o, ed)
             opt_names = fieldnames(o);
 
             % Loop through all custom fields and set values
-            for i=1:length(optnames)
-                assignin('caller', opt_names{i}, o.(opt_names{i}));
+            for i=1:length(opt_names)
+                override_default_var(opt_names{i}, o.(opt_names{i}));
             end
            
             % Select input
