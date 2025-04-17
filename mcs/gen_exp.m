@@ -22,7 +22,7 @@
 %      - n_out: The number of outputs. [Integer]
 %      - model: The model to simulate. [UQ-Model]
 %      - input: The model input [UQ-Input]
-%      - plotting: A boolean indicating whether plots should be made. [Boolean]
+%      - make_plots: A boolean indicating whether plots should be made. [Boolean]
 %      - savdir: The directory under which to save the results. [String]
 %      - outname: The output filename for the results. [String]
 %   ed: A function to generate the inputs to the UQ-Lab model. Should
